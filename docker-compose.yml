@@ -4,7 +4,7 @@ services:
   reclaimarr:
     image: ghcr.io/okhr/reclaimarr:latest
     container_name: reclaimarr
-    restart: unless-stopped
+    restart: on-failure
     environment:
       # --- Required API Settings ---
       - JELLYFIN_URL=http://jellyfin:8096

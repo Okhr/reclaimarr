@@ -7,6 +7,9 @@ on:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
     - name: Check out the repo
       uses: actions/checkout@v3
@@ -18,9 +21,19 @@ jobs:
         username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Docker meta
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ghcr.io/${{ github.repository_owner }}/reclaimarr
+        tags: |
+          type=ref,event=branch
+          type=raw,value=latest,enable={{is_default_branch}}
+
     - name: Build and push Docker image
       uses: docker/build-push-action@v4
       with:
         context: .
         push: true
-        tags: ghcr.io/${{ github.repository_owner }}/reclaimarr:latest
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}

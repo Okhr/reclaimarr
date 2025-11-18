@@ -37,7 +37,7 @@ services:
   reclaimarr:
     image: ghcr.io/okhr/reclaimarr:latest
     container_name: reclaimarr
-    restart: unless-stopped
+    restart: on-failure
     environment:
       # --- Required API Settings ---
       # Assumes you are running Reclaimarr in the same Docker network as your other services.
@@ -69,14 +69,15 @@ services:
 
 ### Running the Service
 
-1.  Save the configuration above as `docker-compose.yml`.
-2.  Create a `.env` file in the same directory to store your secret API keys (e.g., `JELLYFIN_API_KEY=your_key_here`).
-3.  Start the service in detached mode:
-    ```bash
-    docker-compose up -d
-    ```
+The `restart: on-failure` policy is used to ensure the container behaves correctly in both modes:
+- **With `CRON_SCHEDULE`:** The container runs continuously as a service. If it ever crashes, Docker will restart it.
+- **Without `CRON_SCHEDULE`:** The script runs once and exits cleanly. The `on-failure` policy ensures Docker will **not** restart it, allowing it to act as a one-off task.
 
-The container will now run in the background, executing the deletion logic based on the `CRON_SCHEDULE` you provide.
+To start the service, create a `.env` file for your secrets and run:
+```bash
+docker-compose up -d
+```
+The container will start in the background. You can view its logs with `docker-compose logs -f reclaimarr`.
 
 ## Deletion Algorithm
 
