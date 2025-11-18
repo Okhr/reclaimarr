@@ -79,6 +79,16 @@ docker-compose up -d
 ```
 The container will start in the background. You can view its logs with `docker-compose logs -f reclaimarr`.
 
+### Important Considerations
+
+#### Network Shares and Snapshots
+
+If your media library is located on a network share (e.g., NFS, SMB) that uses a snapshotting filesystem like ZFS or Btrfs, you may encounter a situation where disk space is not immediately freed after files are deleted. This is because the deleted files are still held by recent snapshots.
+
+If Reclaimarr runs, deletes files, and then runs again before the snapshots containing those files have expired, it will see that the disk usage has not changed and may attempt to delete more content unnecessarily.
+
+**Recommendation:** Configure your `CRON_SCHEDULE` to run at an interval longer than your snapshot retention period. For example, if your snapshots are kept for 24 hours, set the cron schedule to run every 25 hours (`"0 */25 * * *"`) or once a day at a specific time to ensure the snapshots have been cleared.
+
 ## Deletion Algorithm
 
 The script prioritizes media for deletion based on the following logic:
