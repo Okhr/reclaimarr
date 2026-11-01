@@ -52,7 +52,7 @@ VERBOSE = get_env_variable("VERBOSE", "false").lower() in ('true', '1', 'yes')
 # --- Scheduler Settings ---
 # A cron-style string to schedule runs (e.g., "0 3 * * *" for 3 AM daily).
 # If not set, the script will run only once.
-CRON_SCHEDULE = get_env_variable("CRON_SCHEDULE", None)
+CRON_SCHEDULE = get_env_variable("CRON_SCHEDULE", "")
 
 
 if __name__ == '__main__':
