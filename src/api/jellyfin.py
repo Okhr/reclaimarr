@@ -27,7 +27,7 @@ class JellyfinClient:
         self.base_url = base_url.rstrip('/')
         self.api_key = api_key
         self.headers = {
-            "X-Emby-Token": self.api_key,
+            "Authorization": f'MediaBrowser Token="{self.api_key}"',
             "Content-Type": "application/json",
         }
 
