@@ -43,6 +43,8 @@ class DataCollector:
         sonarr_series = self.sonarr.get_all_series()
         jellyseerr_requests = self.jellyseerr.get_all_requests()
         playback_history = self.jellystat.get_playback_history()
+        if playback_history is None:
+            playback_history = []
 
         # 2. Create lookup maps for efficient merging
         radarr_map_imdb = {movie['imdbId']: movie for movie in radarr_movies if 'imdbId' in movie and movie['imdbId']}
