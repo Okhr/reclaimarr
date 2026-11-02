@@ -17,7 +17,6 @@ A Python CLI tool to automatically manage disk space by intelligently deleting m
 - Docker (for containerized deployment)
 - Access to a Jellyfin media stack with the following services:
   - Jellyfin
-  - Jellystat
   - Jellyseerr
   - Radarr
   - Sonarr
@@ -42,15 +41,17 @@ services:
       # --- Required API Settings ---
       # Assumes you are running Reclaimarr in the same Docker network as your other services.
       - JELLYFIN_URL=http://jellyfin:8096
-      - JELLYFIN_API_KEY=${JELLYFIN_API_KEY} # Replace with your actual key or variable
-      - JELLYSTAT_URL=http://jellystat:3000
-      - JELLYSTAT_API_KEY=${JELLYSTAT_API_KEY}
+      - JELLYFIN_API_KEY=${JELLYFIN_API_KEY}            # Replace with your actual key or variable
       - JELLYSEERR_URL=http://jellyseerr:5055
       - JELLYSEERR_API_KEY=${JELLYSEERR_API_KEY}
       - RADARR_URL=http://radarr:7878
       - RADARR_API_KEY=${RADARR_API_KEY}
       - SONARR_URL=http://sonarr:8989
       - SONARR_API_KEY=${SONARR_API_KEY}
+
+      # --- Optional API Settings ---
+      - JELLYSTAT_URL=http://jellystat:3000             # Falls back to Jellyfin watch data if omitted
+      - JELLYSTAT_API_KEY=${JELLYSTAT_API_KEY}          # Falls back to Jellyfin watch data if omitted
       
       # --- Required Path ---
       - MEDIA_PATH=/media
@@ -60,7 +61,9 @@ services:
       - MIN_AGE_DAYS=90
       - DRY_RUN=true
       - VERBOSE=false
-      - CRON_SCHEDULE="0 3 * * *" # Runs every day at 3 AM. If blank, runs once.
+      - STRATEGY=PRESERVE_WATCHED                       # Should be one of PRESERVE_WATCHED (default), MERGE_LAST_WATCHED_DATE_ADDED
+      - JELLYSEERR_DELETE_REQUESTS=false
+      - CRON_SCHEDULE="0 3 * * *"                       # Runs every day at 3 AM. If blank, runs once.
     volumes:
       # Mount your media library. This path must match the one used by your other services.
       # Example: /srv/media on your host machine.
@@ -94,8 +97,14 @@ If Reclaimarr runs, deletes files, and then runs again before the snapshots cont
 The script prioritizes media for deletion based on the following logic:
 
 1.  **Filter by Age:** Only media older than `MIN_AGE_DAYS` (default: 90) is considered.
+
+### PRESERVE_WATCHED (default)
 2.  **Primary Sort (Never Watched):** Media that has never been watched is prioritized first, sorted by the date it was added (oldest first).
 3.  **Secondary Sort (Watched):** Media that has been watched is sorted by the last watched date (oldest first).
+
+### MERGE_LAST_WATCHED_DATE_ADDED
+2.  If media has a playback event, overwrite the media date_added with the most recent playback date.
+3.  Sort on date_added (oldest first)
 
 The script will delete items from this prioritized list one by one until the disk usage of your media library drops below the `TARGET_USAGE` percentage.
 
@@ -108,10 +117,6 @@ All configuration is handled via the `.env` file. Copy the `.env.example` to `.e
 # Jellyfin
 JELLYFIN_URL=http://your-jellyfin-url:8096
 JELLYFIN_API_KEY=your-jellyfin-api-key
-
-# Jellystat
-JELLYSTAT_URL=http://your-jellystat-url:3791
-JELLYSTAT_API_KEY=your-jellystat-api-key
 
 # Jellyseerr
 JELLYSEERR_URL=http://your-jellyseerr-url:5055
@@ -126,6 +131,13 @@ SONARR_URL=http://your-sonarr-url:8989
 SONARR_API_KEY=your-sonarr-api-key
 ```
 
+### Optional API Settings
+```
+# Jellystat
+JELLYSTAT_URL=http://your-jellystat-url:3791    
+JELLYSTAT_API_KEY=your-jellystat-api-key
+```
+
 ### Deletion & Scheduler Settings
 ```
 # The target disk usage percentage (e.g., 80 for 80%).
@@ -138,5 +150,9 @@ MEDIA_PATH=/media
 DRY_RUN=true
 # Set to "true" for verbose logging.
 VERBOSE=false
+# The strategy to use for sorting the deletion list
+STRATEGY=PRESERVE_WATCHED=PRESERVE_WATCHED                       # Should be one of PRESERVE_WATCHED (default), MERGE_LAST_WATCHED_DATE_ADDED
+# Delete requests along with deleted media in Jellyseerr
+JELLYSEERR_DELETE_REQUESTS=false
 # A cron-style string to schedule runs (e.g., "0 3 * * *"). If blank, runs once.
 CRON_SCHEDULE="0 3 * * *"

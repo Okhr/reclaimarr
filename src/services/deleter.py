@@ -2,8 +2,10 @@ import shutil
 from tabulate import tabulate
 from ..api.radarr import RadarrClient
 from ..api.sonarr import SonarrClient
+from ..api.jellyseerr import JellyseerrClient
 from ..models.media import Media, Movie, TVShow
 from ..utils.logger import setup_logger
+from ..config import JELLYSEERR_DELETE_REQUESTS
 
 logger = setup_logger()
 
@@ -17,6 +19,7 @@ class MediaDeleter:
         """Initializes the MediaDeleter with API clients."""
         self.radarr = RadarrClient()
         self.sonarr = SonarrClient()
+        self.jellyseerr = JellyseerrClient()
         logger.info("MediaDeleter initialized.")
 
     def delete_until_target(self, sorted_media: list[Media], target_usage: int, media_path: str, dry_run: bool):
@@ -93,6 +96,11 @@ class MediaDeleter:
             # In dry run, we just log the action and assume success.
             logger.info(f"[DRY RUN] Would delete '{media.title}' (Size: {media.file_size / 1024**3:.2f} GB).")
             return True
+
+        if JELLYSEERR_DELETE_REQUESTS and media.request_id is not None:
+            deleted = self.jellyseerr.delete_request(media.request_id)
+            if not deleted:
+                logger.error(f"Cannot delete request for '{media.title}' with request id '{media.request_id}'.")
 
         if isinstance(media, Movie) and media.radarr_id:
             return self.radarr.delete_movie(media.radarr_id, delete_files=True)

@@ -1,5 +1,4 @@
-from datetime import datetime, timezone
-
+from ..config import JELLYSTAT_URL
 from ..api.jellyfin import JellyfinClient
 from ..api.jellystat import JellystatClient
 from ..api.jellyseerr import JellyseerrClient
@@ -8,6 +7,7 @@ from ..api.sonarr import SonarrClient
 from ..models.media import Media, Movie, TVShow
 from ..models.playback import Playback
 from ..utils.logger import setup_logger
+from ..utils.date import parse_date
 
 logger = setup_logger()
 
@@ -21,7 +21,8 @@ class DataCollector:
         """Initializes the DataCollector and all API clients."""
         logger.info("Initializing API clients...")
         self.jellyfin = JellyfinClient()
-        self.jellystat = JellystatClient()
+        if JELLYSTAT_URL:
+            self.jellystat = JellystatClient()
         self.jellyseerr = JellyseerrClient()
         self.radarr = RadarrClient()
         self.sonarr = SonarrClient()
@@ -42,7 +43,10 @@ class DataCollector:
         radarr_movies = self.radarr.get_all_movies()
         sonarr_series = self.sonarr.get_all_series()
         jellyseerr_requests = self.jellyseerr.get_all_requests()
-        playback_history = self.jellystat.get_playback_history()
+        if JELLYSTAT_URL:
+            playback_history = self.jellystat.get_playback_history()
+        else:
+            playback_history = self.jellyfin.get_playback_history()
 
         # 2. Create lookup maps for efficient merging
         radarr_map_imdb = {movie['imdbId']: movie for movie in radarr_movies if 'imdbId' in movie and movie['imdbId']}
@@ -101,7 +105,7 @@ class DataCollector:
                 # Prioritize Radarr's added date
                 radarr_added_date = radarr_data.get('movieFile', {}).get('dateAdded')
                 if radarr_added_date:
-                    movie.added_date = self._parse_date(radarr_added_date)
+                    movie.added_date = parse_date(radarr_added_date)
 
             # Add Jellyseerr info
             request_data = request_map.get(movie.jellyfin_id)
@@ -149,7 +153,7 @@ class DataCollector:
                 # Prioritize Sonarr's added date
                 sonarr_added_date = sonarr_data.get('added')
                 if sonarr_added_date:
-                    show.added_date = self._parse_date(sonarr_added_date)
+                    show.added_date = parse_date(sonarr_added_date)
 
             # Add Jellyseerr info
             request_data = request_map.get(show.jellyfin_id)
@@ -184,7 +188,7 @@ class DataCollector:
                     media_item = media_map.get(show_id)
 
             if media_item:
-                playback_date = self._parse_date(record.get('ActivityDateInserted'))
+                playback_date = parse_date(record.get('ActivityDateInserted'))
                 if not playback_date:
                     logger.warning(f"Skipping playback record due to missing ActivityDateInserted: {record}")
                     continue
@@ -199,17 +203,6 @@ class DataCollector:
                 media_item.playbacks.append(playback)
 
         logger.info("Attached playback data to media items.")
-
-    def _parse_date(self, date_str: str) -> datetime | None:
-        """Safely parses an ISO 8601 date string."""
-        if not date_str:
-            return None
-        try:
-            # Handle different precisions, e.g., with or without milliseconds
-            return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
-        except (ValueError, TypeError):
-            logger.warning(f"Could not parse date: {date_str}. Returning None as fallback.")
-            return None
 
 
 if __name__ == '__main__':
