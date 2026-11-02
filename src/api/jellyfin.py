@@ -3,6 +3,7 @@ import requests
 from typing import Any
 from ..config import JELLYFIN_URL, JELLYFIN_API_KEY
 from ..utils.logger import setup_logger
+from ..utils.date import parse_date
 
 # Initialize logger
 logger = setup_logger()
@@ -27,7 +28,7 @@ class JellyfinClient:
         self.base_url = base_url.rstrip('/')
         self.api_key = api_key
         self.headers = {
-            "X-Emby-Token": self.api_key,
+            "Authorization": f'MediaBrowser Token="{self.api_key}"',
             "Content-Type": "application/json",
         }
 
@@ -107,6 +108,52 @@ class JellyfinClient:
         episodes = data.get("Items", []) if data else []
         logger.debug(f"Found {len(episodes)} episodes for show ID: {show_id}")
         return episodes
+
+    def get_playback_history(self) -> list[dict[str, Any]]:
+        users = self._get("/Users")
+        playback_events = {}
+
+        for user in users:
+            user_id = user.get("Id")
+            user_name = user.get("Name")
+
+            # Configure parameters to pull movie data specific to this user context
+            params = {
+                "Recursive": "true",
+                "Fields": "ProviderIds",
+                "userId": user_id,
+                "enableUserData": "true"
+            }
+
+            # Query items for the current iteration's user
+            response = self._get("/Items", params)
+            items = response.get("Items", [])
+
+            # Parse the results for the current user
+            for item in items:
+                user_data = item.get("UserData", {})
+                last_played = user_data.get("LastPlayedDate")
+
+                # Only append items that actually have a last played timestamp
+                if last_played:
+                    item_id = item.get("Id")
+
+                    # Only store the most recent playback date per item
+                    if (item_id in playback_events and
+                        parse_date(playback_events[item_id].get("ActivityDateInserted")) >= parse_date(last_played)):
+                        continue
+
+                    playback_events[item_id] = {
+                        "ItemId": item_id,
+                        "ActivityDateInserted": last_played,
+                        "PlaybackDuration": 600,
+                        "UserId": user_id,
+                        "UserName": user_name,
+                        "Played": user_data.get("Played", False)
+                    }
+
+        logger.debug(f"Found {len(playback_events)} playback events")
+        return list(playback_events.values())
 
 
 if __name__ == '__main__':

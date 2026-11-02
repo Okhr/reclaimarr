@@ -20,3 +20,5 @@ all_media.json
 
 # Conda environment files
 *.yml.lock
+
+tags
