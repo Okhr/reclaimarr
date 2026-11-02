@@ -10,11 +10,11 @@ class ConfigError(Exception):
     pass
 
 
-def get_env_variable(var_name: str, default: str | None = None) -> str:
+def get_env_variable(var_name: str, default: str | None = None, required: bool | None = True) -> str:
     """Get an environment variable or return a default value."""
     value = os.getenv(var_name)
     if value is None:
-        if default is not None:
+        if not required or default is not None:
             return default
         raise ConfigError(f"Required environment variable '{var_name}' not found. Please set it in your .env file.")
     return value
@@ -25,8 +25,8 @@ JELLYFIN_URL = get_env_variable("JELLYFIN_URL")
 JELLYFIN_API_KEY = get_env_variable("JELLYFIN_API_KEY")
 
 # --- Jellystat Configuration ---
-JELLYSTAT_URL = get_env_variable("JELLYSTAT_URL")
-JELLYSTAT_API_KEY = get_env_variable("JELLYSTAT_API_KEY")
+JELLYSTAT_URL = get_env_variable("JELLYSTAT_URL", required=False)
+JELLYSTAT_API_KEY = get_env_variable("JELLYSTAT_API_KEY", required=False)
 
 # --- Jellyseerr Configuration ---
 JELLYSEERR_URL = get_env_variable("JELLYSEERR_URL")
@@ -52,7 +52,7 @@ VERBOSE = get_env_variable("VERBOSE", "false").lower() in ('true', '1', 'yes')
 # --- Scheduler Settings ---
 # A cron-style string to schedule runs (e.g., "0 3 * * *" for 3 AM daily).
 # If not set, the script will run only once.
-CRON_SCHEDULE = get_env_variable("CRON_SCHEDULE", "")
+CRON_SCHEDULE = get_env_variable("CRON_SCHEDULE", required=False)
 
 
 if __name__ == '__main__':
