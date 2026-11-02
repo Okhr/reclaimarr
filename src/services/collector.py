@@ -188,7 +188,7 @@ class DataCollector:
                     media_item = media_map.get(show_id)
 
             if media_item:
-                playback_date = self._parse_date(record.get('ActivityDateInserted'))
+                playback_date = parse_date(record.get('ActivityDateInserted'))
                 if not playback_date:
                     logger.warning(f"Skipping playback record due to missing ActivityDateInserted: {record}")
                     continue
