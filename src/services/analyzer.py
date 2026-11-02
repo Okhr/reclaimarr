@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from ..models.media import Media
 from ..utils.logger import setup_logger
+from ..config import MERGE_LAST_WATCHED_DATE_ADDED
 
 logger = setup_logger()
 
@@ -75,6 +76,9 @@ class MediaAnalyzer:
         1. Never-watched media (oldest added first).
         2. Watched media (oldest last watch date first).
         """
+
+        # TODO
+        MERGE_LAST_WATCHED_DATE_ADDED
 
         # Separate media into watched and never-watched lists
         never_watched = [m for m in media_list if not m.playbacks]
