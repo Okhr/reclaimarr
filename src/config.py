@@ -10,13 +10,18 @@ class ConfigError(Exception):
     pass
 
 
-def get_env_variable(var_name: str, default: str | None = None, required: bool | None = True) -> str:
+def get_env_variable(var_name: str, default: str | None = None, required: bool | None = True, options: list | None = None) -> str:
     """Get an environment variable or return a default value."""
     value = os.getenv(var_name)
     if value is None:
         if not required or default is not None:
             return default
         raise ConfigError(f"Required environment variable '{var_name}' not found. Please set it in your .env file.")
+
+    if options is not None:
+        if not value in options:
+            raise ConfigError(f"Environment variable '{var_name}' has an invalid value. Please set the variable to one of these: {options}")
+
     return value
 
 
@@ -48,7 +53,7 @@ TARGET_USAGE = int(get_env_variable("TARGET_USAGE", "80"))
 MIN_AGE_DAYS = int(get_env_variable("MIN_AGE_DAYS", "90"))
 DRY_RUN = get_env_variable("DRY_RUN", "true").lower() in ('true', '1', 'yes')
 VERBOSE = get_env_variable("VERBOSE", "false").lower() in ('true', '1', 'yes')
-MERGE_LAST_WATCHED_DATE_ADDED = get_env_variable("MERGE_LAST_WATCHED_DATE_ADDED", "false")
+STRATEGY = get_env_variable("STRATEGY", "PRESERVE_WATCHED", options=["PRESERVE_WATCHED", "MERGE_LAST_WATCHED_DATE_ADDED"])
 
 # --- Scheduler Settings ---
 # A cron-style string to schedule runs (e.g., "0 3 * * *" for 3 AM daily).

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from ..models.media import Media
 from ..utils.logger import setup_logger
-from ..config import MERGE_LAST_WATCHED_DATE_ADDED
+from ..config import STRATEGY
 
 logger = setup_logger()
 
@@ -70,30 +70,52 @@ class MediaAnalyzer:
 
     def _sort_for_deletion(self, media_list: list[Media]) -> list[Media]:
         """
-        Sorts media based on the deletion priority algorithm.
+        Sorts media based on the selected deletion strategy.
 
-        Priority:
+        PRESERVE_WATCHED:
         1. Never-watched media (oldest added first).
         2. Watched media (oldest last watch date first).
+
+        MERGE_LAST_WATCHED_DATE_ADDED:
+        1. If media has a playback event, overwrite the media date_added with the most
+           recent playback date.
+        2. Sort on date_added (oldest first)
         """
 
-        # TODO
-        MERGE_LAST_WATCHED_DATE_ADDED
+        logger.info(f"Using {STRATEGY} strategy for sorting the deletion list")
+        match STRATEGY:
+            case "MERGE_LAST_WATCHED_DATE_ADDED":
+                merged_media_list = media_list
+                for item in merged_media_list:
+                    # Update media date added with most recent playback date
+                    if item.playbacks:
+                        most_recent_playback = max(item.playbacks, key=lambda p: p.playback_date)
+                        item.added_date = most_recent_playback.playback_date
+                
+                # Sort merged media list on date added (oldest first)
+                merged_media_list.sort(key=lambda m: m.added_date)
 
-        # Separate media into watched and never-watched lists
-        never_watched = [m for m in media_list if not m.playbacks]
-        watched = [m for m in media_list if m.playbacks]
+                logger.info(f"Sorting complete. Found {len(merged_media_list)} item.")
 
-        # Sort never-watched media by added date (oldest first)
-        never_watched.sort(key=lambda m: m.added_date)
+                return merged_media_list
 
-        # Sort watched media by last watch date (oldest first)
-        watched.sort(key=lambda m: m.last_watch_date)
+            case "PRESERVE_WATCHED":
+                # Separate media into watched and never-watched lists
+                never_watched = [m for m in media_list if not m.playbacks]
+                watched = [m for m in media_list if m.playbacks]
 
-        logger.info(f"Sorting complete. Found {len(never_watched)} never-watched items and {len(watched)} watched items.")
+                # Sort never-watched media by added date (oldest first)
+                never_watched.sort(key=lambda m: m.added_date)
 
-        # Combine the lists, with never-watched items having higher priority
-        return never_watched + watched
+                # Sort watched media by last watch date (oldest first)
+                watched.sort(key=lambda m: m.last_watch_date)
+
+                logger.info(f"Sorting complete. Found {len(never_watched)} never-watched items and {len(watched)} watched items.")
+
+                # Combine the lists, with never-watched items having higher priority
+                return never_watched + watched
+            case _:
+                raise ValueError("Invalid sort strategy detected.")
 
 
 if __name__ == '__main__':
