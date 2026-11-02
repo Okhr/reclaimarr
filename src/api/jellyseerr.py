@@ -48,8 +48,28 @@ class JellyseerrClient:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error calling Jellyseerr API endpoint {endpoint}: {e}")
+            logger.error(f"Error calling Jellyseerr API endpoint GET {endpoint}: {e}")
             return None
+
+    def _delete(self, endpoint: str, params: dict[str, Any] | None = None) -> bool:
+        """
+        Performs a DELETE request to a Jellyseerr API endpoint.
+
+        Args:
+            endpoint (str): The API endpoint to call.
+            params (dict[str, Any] | None): Query parameters for the request.
+
+        Returns:
+            Any | None: The JSON response from the API, or None if an error occurs.
+        """
+        url = f"{self.base_url}{endpoint}"
+        try:
+            response = requests.delete(url, headers=self.headers, params=params, timeout=30)
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error calling Jellyseerr API endpoint DELETE {endpoint}: {e}")
+            return False
 
     def get_all_requests(self) -> list[dict[str, Any]]:
         """
@@ -70,6 +90,16 @@ class JellyseerrClient:
 
         logger.info(f"Found {len(requests)} media requests in Jellyseerr.")
         return requests
+
+    def delete_request(self, request_id: str) -> bool:
+        """
+        Deletes a media requests from the Jellyseerr server.
+
+        Returns:
+            bool: The success state of the request
+        """
+        logger.info(f"Deleting media requests {request_id} from Jellyseerr...")
+        return self._delete(f"/api/v1/request/{request_id}", params={})
 
 
 if __name__ == '__main__':

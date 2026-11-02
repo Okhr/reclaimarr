@@ -36,6 +36,7 @@ JELLYSTAT_API_KEY = get_env_variable("JELLYSTAT_API_KEY", required=False)
 # --- Jellyseerr Configuration ---
 JELLYSEERR_URL = get_env_variable("JELLYSEERR_URL")
 JELLYSEERR_API_KEY = get_env_variable("JELLYSEERR_API_KEY")
+JELLYSEERR_DELETE_REQUESTS = get_env_variable("JELLYSEERR_DELETE_REQUESTS", "false").lower() in ('true', '1', 'yes')
 
 # --- Radarr Configuration ---
 RADARR_URL = get_env_variable("RADARR_URL")

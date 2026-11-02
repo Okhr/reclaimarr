@@ -62,6 +62,7 @@ services:
       - DRY_RUN=true
       - VERBOSE=false
       - STRATEGY=PRESERVE_WATCHED                       # Should be one of PRESERVE_WATCHED (default), MERGE_LAST_WATCHED_DATE_ADDED
+      - JELLYSEERR_DELETE_REQUESTS=false
       - CRON_SCHEDULE="0 3 * * *"                       # Runs every day at 3 AM. If blank, runs once.
     volumes:
       # Mount your media library. This path must match the one used by your other services.
@@ -150,6 +151,8 @@ DRY_RUN=true
 # Set to "true" for verbose logging.
 VERBOSE=false
 # The strategy to use for sorting the deletion list
-STRATEGY=PRESERVE_WATCHED                       # Should be one of PRESERVE_WATCHED (default), MERGE_LAST_WATCHED_DATE_ADDED
+STRATEGY=PRESERVE_WATCHED=PRESERVE_WATCHED                       # Should be one of PRESERVE_WATCHED (default), MERGE_LAST_WATCHED_DATE_ADDED
+# Delete requests along with deleted media in Jellyseerr
+JELLYSEERR_DELETE_REQUESTS=false
 # A cron-style string to schedule runs (e.g., "0 3 * * *"). If blank, runs once.
 CRON_SCHEDULE="0 3 * * *"
