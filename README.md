@@ -17,7 +17,6 @@ A Python CLI tool to automatically manage disk space by intelligently deleting m
 - Docker (for containerized deployment)
 - Access to a Jellyfin media stack with the following services:
   - Jellyfin
-  - Jellystat
   - Jellyseerr
   - Radarr
   - Sonarr
@@ -42,9 +41,9 @@ services:
       # --- Required API Settings ---
       # Assumes you are running Reclaimarr in the same Docker network as your other services.
       - JELLYFIN_URL=http://jellyfin:8096
-      - JELLYFIN_API_KEY=${JELLYFIN_API_KEY} # Replace with your actual key or variable
-      - JELLYSTAT_URL=http://jellystat:3000
-      - JELLYSTAT_API_KEY=${JELLYSTAT_API_KEY}
+      - JELLYFIN_API_KEY=${JELLYFIN_API_KEY}            # Replace with your actual key or variable
+      - JELLYSTAT_URL=http://jellystat:3000             # OPTIONAL; falls back to Jellyfin watch data if omitted
+      - JELLYSTAT_API_KEY=${JELLYSTAT_API_KEY}          # OPTIONAL; falls back to Jellyfin watch data if omitted
       - JELLYSEERR_URL=http://jellyseerr:5055
       - JELLYSEERR_API_KEY=${JELLYSEERR_API_KEY}
       - RADARR_URL=http://radarr:7878
@@ -60,7 +59,7 @@ services:
       - MIN_AGE_DAYS=90
       - DRY_RUN=true
       - VERBOSE=false
-      - CRON_SCHEDULE="0 3 * * *" # Runs every day at 3 AM. If blank, runs once.
+      - CRON_SCHEDULE="0 3 * * *"                       # Runs every day at 3 AM. If blank, runs once.
     volumes:
       # Mount your media library. This path must match the one used by your other services.
       # Example: /srv/media on your host machine.
@@ -109,10 +108,6 @@ All configuration is handled via the `.env` file. Copy the `.env.example` to `.e
 JELLYFIN_URL=http://your-jellyfin-url:8096
 JELLYFIN_API_KEY=your-jellyfin-api-key
 
-# Jellystat
-JELLYSTAT_URL=http://your-jellystat-url:3791
-JELLYSTAT_API_KEY=your-jellystat-api-key
-
 # Jellyseerr
 JELLYSEERR_URL=http://your-jellyseerr-url:5055
 JELLYSEERR_API_KEY=your-jellyseerr-api-key
@@ -124,6 +119,13 @@ RADARR_API_KEY=your-radarr-api-key
 # Sonarr
 SONARR_URL=http://your-sonarr-url:8989
 SONARR_API_KEY=your-sonarr-api-key
+```
+
+### Optional API Settings
+```
+# Jellystat
+JELLYSTAT_URL=http://your-jellystat-url:3791    
+JELLYSTAT_API_KEY=your-jellystat-api-key
 ```
 
 ### Deletion & Scheduler Settings
